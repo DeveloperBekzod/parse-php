@@ -90,37 +90,63 @@ function saveItem($item): void
             'origin' => json_encode(['en' => 'China', 'ru' => 'Китай', 'zh-CN' => '中國']),
             'created_at' => date("Y-m-d H:i:s"),
         ];
-        $stmt = $db->prepare("INSERT INTO cars (source_id, name, model, category, year, state, full_weight, origin, created_at) 
-                VALUES (:source_id, :name, :model, :category, :year, :state, :full_weight, :origin, :created_at)");
-        $stmt->bindParam(':source_id', $carData["source_id"]);
-        $stmt->bindParam(':name', $carData["name"]);
-        $stmt->bindParam(':model', $carData["model"]);
-        $stmt->bindParam(':category', $carData["category"]);
-        $stmt->bindParam(':year', $carData["year"]);
-        $stmt->bindParam(':state', $carData["state"]);
-        $stmt->bindParam(':full_weight', $carData["full_weight"]);
-        $stmt->bindParam(':origin', $carData["origin"]);
-        $stmt->bindParam(':created_at', $carData["created_at"]);
-        $stmt->execute();
-        $carId = $db->lastInsertId();
+        $stmt = $db->prepare("INSERT INTO cars (source_id, name, model, category, year, state, full_weight, origin, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        if ($stmt === false) {
+            throw new Exception("Prepare failed: " . $db->error);
+        }
+        $stmt->bind_param(
+            'issssssss',
+            $carData["source_id"],
+            $carData["name"],
+            $carData["model"],
+            $carData["category"],
+            $carData["year"],
+            $carData["state"],
+            $carData["full_weight"],
+            $carData["origin"],
+            $carData["created_at"]
+        );
+        if (!$stmt->execute()) {
+            throw new Exception("car insert error: " . $db->error);
+        }
+        $carId = $db->insert_id;
         $cover = saveImage($item->cover);
-        $stmt = $db->prepare("INSERT INTO images (car_id, path, type, size) VALUES (:car_id, :path, :type, :size)");
-        $stmt->bindParam(':car_id', $carId);
-        $stmt->bindParam(':path', $cover['path']);
-        $stmt->bindParam(':type', $cover['type']);
-        $stmt->bindParam(':size', $cover['size']);
-        $stmt->execute();
+        $stmt = $db->prepare("INSERT INTO images (car_id, path, type, size) VALUES (?, ?, ?, ?)");
+        if ($stmt === false) {
+            throw new Exception("Prepare failed: " . $db->error);
+        }
+        $stmt->bind_param(
+            'isss',
+            $carId,
+            $cover['path'],
+            $cover['type'],
+            $cover['size']
+        );
+        if (!$stmt->execute()) {
+            throw new Exception("image cover insert error: " . $db->error);
+        }
+
         foreach ($item->image_list as $order => $url) {
             $image = saveImage($url);
             $ord = $order + 1;
-            $stmt = $db->prepare("INSERT INTO images (car_id, path, `order`, type, size) VALUES (:car_id, :path, :order, :type, :size)");
-            $stmt->bindParam(':car_id', $carId);
-            $stmt->bindParam(':path', $image['path']);
-            $stmt->bindParam(':order', $ord);
-            $stmt->bindParam(':type', $image['type']);
-            $stmt->bindParam(':size', $image['size']);
-            $stmt->execute();
+            $stmt =$db->prepare("INSERT INTO images (car_id, path, `order`, type, size) VALUES (?, ?, ?, ?, ?)");
+            if ($stmt === false) {
+                throw new Exception("Prepare failed: " . $db->error);
+            }
+            $stmt->bind_param(
+                'isiss',
+                $carId,
+                $image['path'],
+                $ord,
+                $image['type'],
+                $image['size']
+            );
+            if (!$stmt->execute()) {
+                throw new Exception("image insert error: " . $db->error);
+            }
         }
+        $stmt->close();
     }
 }
 

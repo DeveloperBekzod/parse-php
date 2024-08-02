@@ -2,6 +2,7 @@
 require_once "db.php";
 require_once "functions.php";
 
+global $db;
 $class_category = 3; // 1 - excavator, 2 - Аuto-concrete pumps, 3 - Cranes
 $top_category = 2; // 1 - new, 2 - used trucks
 
@@ -42,4 +43,4 @@ for ($c = 1; $c <= $class_category; $c++) {
         }
     }
 }
-$db = null;
+$db->close();
