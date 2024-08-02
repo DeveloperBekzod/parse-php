@@ -2,11 +2,11 @@
 
 
 /**
- * @param $item
+ * @param mixed $item
  * @return void
  * @throws Exception
  */
-function saveItem($item): void
+function saveItem(mixed $item): void
 {
     global $db;
     $year = getYear($item->made_time);
